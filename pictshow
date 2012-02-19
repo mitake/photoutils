@@ -1,0 +1,150 @@
+#! /usr/bin/env python
+
+import sys, os, pygame
+import threading
+
+prev_keys = ['h', 'k']
+next_keys = ['l', 'j', 'space']
+quit_keys = ['q']
+rot_right_keys = ['r']
+rot_left_keys = ['e']
+zoom_in_keys = [';']            # fubar
+zoom_out_keys = ['-']
+
+acts = []
+
+first_load_is_done = False
+first_load = threading.Condition()
+def first_load_complete():
+    first_load.acquire()
+    first_load.notify()
+    first_load.release()
+
+def wait_first_load():
+    first_load.acquire()
+    while not first_load_is_done:
+        first_load.wait()
+    first_load.release()
+
+index = 0
+files_lock = threading.Lock()
+files = []                      # list of surface
+names = []
+window = None
+
+crt_surf = None                 # current showing surface
+crt_scale = 1.0
+
+class PhotoLoader(threading.Thread):
+    # def __init__(self):
+    #     pass
+
+    def init_files(self):
+        global files, names, files_lock, first_load_is_done
+
+        raw_files = os.listdir('.')
+        raw_files.sort()
+        for f in raw_files:
+            try:
+                srf = pygame.image.load(f)
+                files_lock.acquire()
+                files.append(srf)
+                files_lock.release()
+                names.append(f)
+                
+                if not first_load_is_done:
+                    first_load_is_done = True
+                    first_load_complete()
+            except:# sys.exc_info()[0]
+                continue
+
+    def run(self):
+        self.init_files()
+
+def show_surface(surface):
+    global crt_surf
+    if window.get_size() != surface.get_size():
+        pygame.display.set_mode(surface.get_size())
+        pygame.mouse.set_pos(window.get_size())
+    window.blit(surface, (0,0))
+    pygame.display.flip()
+    crt_surf = surface
+
+def show_index(idx):
+    return show_surface(files[idx])
+
+def act_show_next():
+    global index
+    index += 1
+    files_lock.acquire()
+    index %= len(files)
+    files_lock.release()
+    return show_index(index)
+acts.append((next_keys, act_show_next))
+
+def act_show_prev():
+    global index
+    index -= 1
+    files_lock.acquire()
+    index %= len(files)
+    files_lock.release()
+    return show_index(index)
+acts.append((prev_keys, act_show_prev))
+
+def act_rotate_right():
+    show_surface(pygame.transform.rotate(crt_surf, -90))
+acts.append((rot_right_keys, act_rotate_right))
+
+def act_rotate_left():
+    show_surface(pygame.transform.rotate(crt_surf, 90))
+acts.append((rot_left_keys, act_rotate_left))
+
+def act_zoom_in():
+    global crt_scale
+    crt_scale += 0.1
+    x, y = crt_surf.get_size()
+    x, y = x * crt_scale, y * crt_scale
+    show_surface(pygame.transform.scale(crt_surf, (x, y)))
+# acts.append((zoom_in_keys, act_zoom_in))
+
+def act_zoom_out():
+    global crt_scale
+    crt_scale -= 0.1
+    x, y = crt_surf.get_size()
+    x, y = x * crt_scale, y * crt_scale
+    show_surface(pygame.transform.scale(crt_surf, (x, y)))
+# acts.append((zoom_out_keys, act_zoom_out))
+
+def act_quit():
+    sys.exit(0)
+acts.append((quit_keys, act_quit))
+
+def action(key):
+    for k_lis, act in acts:
+        if key in k_lis:
+            act()
+
+# init_files()
+loader = PhotoLoader()
+loader.start()
+
+wait_first_load()
+
+pygame.init()
+pygame.key.set_repeat(100, 100)
+try:
+    window = pygame.display.set_mode(files[0].get_size())
+except IndexError:              # there's no image
+    print 'no images!'
+    sys.exit(0)
+
+show_index(0)                   # fixme
+
+while True:
+    e = pygame.event.poll()
+    if e.type == pygame.NOEVENT:
+        e = pygame.event.wait()
+
+    if e.type == pygame.KEYDOWN:
+        key = pygame.key.name(e.key)
+        action(key)
