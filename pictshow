@@ -58,6 +58,10 @@ class PhotoLoader(threading.Thread):
             except:# sys.exc_info()[0]
                 continue
 
+        if not first_load_is_done: # no photos in current directory
+            first_load_is_done = True
+            first_load_complete()
+
     def run(self):
         self.init_files()
 
