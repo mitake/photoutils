@@ -3,6 +3,9 @@
 import sys, os, pygame
 import threading
 
+display_size_x = 1024
+display_size_y = 768
+
 prev_keys = ['h', 'k']
 next_keys = ['l', 'j', 'space']
 quit_keys = ['q']
@@ -70,6 +73,14 @@ def show_surface(surface):
     if window.get_size() != surface.get_size():
         pygame.display.set_mode(surface.get_size())
         pygame.mouse.set_pos(window.get_size())
+
+    x, y = surface.get_size()
+    scale = 0.0
+    if y < x:
+        scale = display_size_x / float(x)
+    else:
+        scale = display_size_y / float(y)
+    surface = pygame.transform.scale(surface, (scale * x, scale * y))
     window.blit(surface, (0,0))
     pygame.display.flip()
     crt_surf = surface
