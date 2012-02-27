@@ -38,6 +38,9 @@ window = None
 crt_surf = None                 # current showing surface
 crt_scale = 1.0
 
+max_load_files = 100
+current_loaded_files = 0
+
 class PhotoLoader(threading.Thread):
     # def __init__(self):
     #     pass
@@ -70,9 +73,6 @@ class PhotoLoader(threading.Thread):
 
 def show_surface(surface):
     global crt_surf
-    if window.get_size() != surface.get_size():
-        pygame.display.set_mode(surface.get_size())
-        pygame.mouse.set_pos(window.get_size())
 
     x, y = surface.get_size()
     scale = 0.0
@@ -80,7 +80,12 @@ def show_surface(surface):
         scale = display_size_x / float(x)
     else:
         scale = display_size_y / float(y)
-    surface = pygame.transform.scale(surface, (scale * x, scale * y))
+    surface = pygame.transform.scale(surface, (int(scale * x), int(scale * y)))
+
+    if window.get_size() != surface.get_size():
+        pygame.display.set_mode(surface.get_size())
+        pygame.mouse.set_pos(window.get_size())
+
     window.blit(surface, (0,0))
     pygame.display.flip()
     crt_surf = surface
