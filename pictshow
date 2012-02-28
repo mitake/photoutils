@@ -38,8 +38,9 @@ window = None
 crt_surf = None                 # current showing surface
 crt_scale = 1.0
 
-max_load_files = 100
-current_loaded_files = 0
+max_load_files_nr = 10
+max_entire_files_nr = -1
+current_loaded_files_nr = 0
 
 class PhotoLoader(threading.Thread):
     # def __init__(self):
@@ -90,25 +91,34 @@ def show_surface(surface):
     pygame.display.flip()
     crt_surf = surface
 
-def show_index(idx):
-    return show_surface(files[idx])
+pict_file_names = []
+surfaces = []
+
+def show_index(idx, direction):
+    if surfaces[idx] == None:
+        surfaces[idx] = pygame.image.load(pict_file_names[idx])
+        if max_load_files_nr < len(surfaces):
+            surfaces[(idx + (direction * -1) * max_load_files_nr) % len(surfaces)] = None
+    return show_surface(surfaces[idx])
 
 def act_show_next():
     global index
     index += 1
-    files_lock.acquire()
-    index %= len(files)
-    files_lock.release()
-    return show_index(index)
+    index %= len(surfaces)
+    # files_lock.acquire()
+    # index %= len(files)
+    # files_lock.release()
+    return show_index(index, 1)
 acts.append((next_keys, act_show_next))
 
 def act_show_prev():
     global index
     index -= 1
-    files_lock.acquire()
-    index %= len(files)
-    files_lock.release()
-    return show_index(index)
+    index %= len(surfaces)
+    # files_lock.acquire()
+    # index %= len(files)
+    # files_lock.release()
+    return show_index(index, -1)
 acts.append((prev_keys, act_show_prev))
 
 def act_rotate_right():
@@ -145,20 +155,68 @@ def action(key):
             act()
 
 # init_files()
-loader = PhotoLoader()
-loader.start()
+# loader = PhotoLoader()
+# loader.start()
 
-wait_first_load()
+def str2list(s):
+    ret = []
+    for i in range(0, len(s)):
+        ret.append(s[i])
+    return ret
+
+def x_contain_y(x, y, i):
+    if len(y) == i:
+        return True
+    if x[i] == y[i]:
+        return x_contain_y(x, y, i + 1)
+    else:
+        return False
+
+def is_name_pictfile(_name):
+    if len(_name) < 4:
+        return False
+
+    name = _name.lower()
+    exts = ['jpg', 'jpeg', 'png', 'bmp']
+    rext_lists = []
+    for ext in exts:
+        l = str2list(ext)
+        l.reverse()
+        rext_lists.append(l)
+    rnamel = str2list(name)
+    rnamel.reverse()
+
+    for rextl in rext_lists:
+        if x_contain_y(rnamel, rextl, 0):
+            return True
+    return False
+
+# initialization for single thread
+
+def init_st():
+    file_names = os.listdir('.')
+    file_names.sort()
+    global surfaces
+    for file_name in file_names:
+        if is_name_pictfile(file_name):
+            pict_file_names.append(file_name)
+    surfaces = [None] * len(pict_file_names)
+
+init_st()
+
+# wait_first_load()
 
 pygame.init()
 pygame.key.set_repeat(100, 100)
-try:
-    window = pygame.display.set_mode(files[0].get_size())
-except IndexError:              # there's no image
-    print 'no images!'
-    sys.exit(0)
+# try:
+#     window = pygame.display.set_mode(files[0].get_size())
+# except IndexError:              # there's no image
+#     print 'no images!'
+#     sys.exit(0)
 
-show_index(0)                   # fixme
+surfaces[0] = pygame.image.load(pict_file_names[0])
+window = pygame.display.set_mode(surfaces[0].get_size())
+show_index(0, 1)                   # fixme
 
 while True:
     e = pygame.event.poll()
