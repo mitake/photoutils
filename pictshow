@@ -149,6 +149,10 @@ def act_quit():
     sys.exit(0)
 acts.append((quit_keys, act_quit))
 
+def act_info():
+    print 'current file: %s' % pict_file_names[index]
+acts.append((['i'], act_info))
+
 def action(key):
     for k_lis, act in acts:
         if key in k_lis:
