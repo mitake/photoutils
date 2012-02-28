@@ -153,6 +153,34 @@ def act_info():
     print 'current file: %s' % pict_file_names[index]
 acts.append((['i'], act_info))
 
+symlink_album_dir = ''
+
+def act_symlink_album_add():
+    if symlink_album_dir == '':
+        print 'symlink album directory name is required...'
+        sys.exit(1)
+        
+    fullpath = os.getcwd() + '/' + pict_file_names[index]
+    link = symlink_album_dir + pict_file_names[index]
+    try:
+        os.symlink(fullpath, link)
+    except OSError:
+        print 'maybe %s is already added to the album...' % pict_file_names[index]
+
+acts.append((['a'], act_symlink_album_add))
+
+def act_symlink_album_del():
+    if symlink_album_dir == '':
+        print 'symlink album directory name is required...'
+        sys.exit(1)
+    
+    link = symlink_album_dir + pict_file_names[index]
+    try:
+        os.unlink(link)
+    except OSError:
+        print 'maybe %s is not added to the album...' % pict_file_names[index]
+acts.append((['d'], act_symlink_album_del))
+
 def action(key):
     for k_lis, act in acts:
         if key in k_lis:
@@ -196,6 +224,12 @@ def is_name_pictfile(_name):
     return False
 
 # initialization for single thread
+
+for i in range(0, len(sys.argv)):
+    if sys.argv[i] == '--symlink-album':
+        symlink_album_dir = os.getcwd() + '/' + sys.argv[i + 1] + '/'
+        i += 1
+        print '%s' % symlink_album_dir
 
 def init_st():
     file_names = os.listdir('.')
