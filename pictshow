@@ -3,8 +3,8 @@
 import sys, os, pygame
 import threading
 
-display_size_x = 1024
-display_size_y = 768
+max_display_size_x = 1024
+max_display_size_y = 1024
 
 prev_keys = ['h', 'k']
 next_keys = ['l', 'j', 'space']
@@ -77,10 +77,13 @@ def show_surface(surface):
 
     x, y = surface.get_size()
     scale = 0.0
-    if y < x:
-        scale = display_size_x / float(x)
+    if x <= max_display_size_x and y <= max_display_size_y:
+        scale = 1
     else:
-        scale = display_size_y / float(y)
+        if y < x:
+            scale = max_display_size_x / float(x)
+        else:
+            scale = max_display_size_y / float(y)
     surface = pygame.transform.scale(surface, (int(scale * x), int(scale * y)))
 
     if window.get_size() != surface.get_size():
@@ -226,7 +229,7 @@ def is_name_pictfile(_name):
         return False
 
     name = _name.lower()
-    exts = ['jpg', 'jpeg', 'png', 'bmp']
+    exts = ['jpg', 'jpeg', 'png', 'bmp', 'gif']
     rext_lists = []
     for ext in exts:
         l = str2list(ext)
