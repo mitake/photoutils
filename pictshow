@@ -269,6 +269,10 @@ pygame.key.set_repeat(100, 100)
 #     print 'no images!'
 #     sys.exit(0)
 
+if len(pict_file_names) == 0:
+    print 'no photos...'
+    sys.exit(0)
+
 surfaces[0] = pygame.image.load(pict_file_names[0])
 window = pygame.display.set_mode(surfaces[0].get_size())
 show_index(0, 1)                   # fixme
