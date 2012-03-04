@@ -111,6 +111,13 @@ def act_show_next():
     return show_index(index, 1)
 acts.append((next_keys, act_show_next))
 
+def act_show_next_big():
+    global index
+    index += 50
+    index %= len(surfaces)
+    return show_index(index, 1)
+acts.append((['n'], act_show_next_big))
+
 def act_show_prev():
     global index
     index -= 1
@@ -120,6 +127,16 @@ def act_show_prev():
     # files_lock.release()
     return show_index(index, -1)
 acts.append((prev_keys, act_show_prev))
+
+def act_show_prev_big():
+    global index
+    index -= 50
+    index %= len(surfaces)
+    # files_lock.acquire()
+    # index %= len(files)
+    # files_lock.release()
+    return show_index(index, -1)
+acts.append((['p'], act_show_prev_big))
 
 def act_rotate_right():
     show_surface(pygame.transform.rotate(crt_surf, -90))
