@@ -179,7 +179,7 @@ def act_symlink_album_add():
     if symlink_album_dir == '':
         print 'symlink album directory name is required...'
         sys.exit(1)
-        
+
     fullpath = os.getcwd() + '/' + pict_file_names[index]
     link = symlink_album_dir + pict_file_names[index]
     try:
@@ -200,6 +200,20 @@ def act_symlink_album_del():
     except OSError:
         print 'maybe %s is not added to the album...' % pict_file_names[index]
 acts.append((['d'], act_symlink_album_del))
+
+ext_viewer = '/usr/bin/xzgv'
+def act_external_viewer():
+    try:
+        pid = os.fork()
+        if pid == 0:
+            os.execl(ext_viewer, ext_viewer, pict_file_names[index])
+        else:
+            os.waitpid(pid, 0)
+    except OSError:
+        print 'fork() failed'
+        sys.exit(1)
+
+acts.append((['v'], act_external_viewer))
 
 def action(key):
     for k_lis, act in acts:
@@ -247,7 +261,10 @@ def is_name_pictfile(_name):
 
 for i in range(0, len(sys.argv)):
     if sys.argv[i] == '--symlink-album':
-        symlink_album_dir = os.getcwd() + '/' + sys.argv[i + 1] + '/'
+        if sys.argv[i + 1][0] == '/':
+            symlink_album_dir = sys.argv[i + 1] + '/'
+        else:
+            symlink_album_dir = os.getcwd() + '/' + sys.argv[i + 1] + '/'
         i += 1
         print '%s' % symlink_album_dir
 
